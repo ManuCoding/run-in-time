@@ -31,32 +31,40 @@ int main() {
 	// memset(jit_program+1,0xFE,1); // -2
 
 	jit_func(NULL);
-    unsigned char inject[] = {
-        0x48, 0xC7, 0xC0, 0x3C, 0x00, 0x00, 0x00,  // mov rax, 60 (exit syscall)
-        0x48, 0xC7, 0xC7, 0x00, 0x00, 0x00, 0x00,  // mov rdi, 0 (exit status)
-        0x0F, 0x05                                 // syscall
-    };
+	unsigned char domath[]={
+		0x8B, 0x05, 0x00, 0x00, 0x00, 0x00, // mov addrthingy, eax
+	};
+
+	*(unsigned int*)(domath+2)=(unsigned char*)&a-(unsigned char*)jit_program-6;
+
+	printf("a:           %p\n",(unsigned int*)&a);
+	printf("jit_program: %p\n",(unsigned int*)jit_program);
+	printf("offset:      0x%08x\n",*(unsigned int*)(domath+2));
+
+
+	printf("Generated code:\n");
+	for(size_t i=0; i<sizeof(domath); i++) {
+		printf("%02X ",domath[i]);
+	}
+	printf("\n");
+
+	memcpy(jit_program,domath,sizeof(domath));
+
+	jit_func(NULL);
+
+	// debugging code above so the rest here is ignored, code below works
+	unsigned char inject[] = {
+		0x48, 0xC7, 0xC0, 0x3C, 0x00, 0x00, 0x00,  // mov rax, 60
+		0x48, 0xC7, 0xC7, 0x2A, 0x00, 0x00, 0x00,  // mov rdi, 42
+		0x0F, 0x05                                 // syscall
+	};
+	// successfully makes the program return with 42
 	memcpy(jit_program,inject,sizeof(inject));
 	jit_func(NULL);
 
-
-    unsigned char code[] = {
-        0x8B, 0x05, 0x00, 0x00, 0x00, 0x00,   // mov eax, [rip+a]
-        0x03, 0x05, 0x00, 0x00, 0x00, 0x00,   // add eax, [rip+b]
-        0x89, 0x05, 0x00, 0x00, 0x00, 0x00    // mov [rip+result], eax
-    };
-
-    // Calculate the relative addresses of a, b, and result
-    *(unsigned int *)(code + 2) = (unsigned char *)&a - (unsigned char *)jit_program - 6;
-    *(unsigned int *)(code + 8) = (unsigned char *)&b - (unsigned char *)jit_program - 12;
-    *(unsigned int *)(code + 14) = (unsigned char *)&result - (unsigned char *)jit_program - 18;
-
-	printf("Inserting payload (oooo scary)...\n");
-    // Copy the machine code to the executable memory
-    memcpy(jit_program, code, sizeof(code));
-	jit_func(NULL);
 	return 0;
 
+	// thread code, currently removed cause testing stuff
 	pthread_t thread;
 	int result=pthread_create(&thread,NULL,jit_func,NULL);
 	if(result!=0) {
