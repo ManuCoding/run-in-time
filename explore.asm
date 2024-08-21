@@ -6,6 +6,7 @@ hello:
 .global funfunc
 
 funfunc:
+	mov $659706976665, %rdi
 	mov (%rdi), %rax
 	ret
 	mov %rax, %rdi
