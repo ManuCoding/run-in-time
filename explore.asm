@@ -3,17 +3,17 @@ hello:
 	.asciz "abcdefg\n"
 
 .section .text
-.global _start
+.global funfunc
 
-_start:
-	mov $1,%rax
-	mov $1,%rdi
-	mov $hello,%rsi
-	mov $8,%rdx
+funfunc:
+	mov (%rdi), %rax
+	ret
+	mov %rax, %rdi
+
+	mov $60, %rax
+	ret
 	syscall
 
 	mov $60,%rax
-	mov $305419896,%rbx
-	mov $42,%rdi
 	syscall
 
