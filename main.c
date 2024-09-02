@@ -41,15 +41,27 @@ int main() {
 	memset(jit_program,0xEB,1); // JMP8
 	memset(jit_program+1,0xFE,1); // -2
 
-	// jit_func(NULL);
 	unsigned char domath[]={
 		0x48, 0xBF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov addr, %rdi
+																		0x57,
 		0x48, 0x8B, 0x07, // mov [%rdi], %rax
 		0x48, 0x83, 0xC7, 0x04,
 		0x48, 0x8B, 0x1F,
 		0x48, 0x01, 0xD8,
 		0x48, 0x83, 0xC7, 0x04,
 		0x89, 0x07,
+		0x5F,
+		0xEB, 0xFE,
+	};
+
+	unsigned char moremath[]={
+		0x57,
+		0x48, 0x83, 0xC7, 0x08,
+		0x48, 0x8B, 0x1F,
+		0x48, 0x01, 0xD8,
+		0x89, 0x07,
+		0x5F,
+		0xEB, 0xFE,
 	};
 
 	// *(unsigned int*)(domath+2)=(unsigned char*)&jit_mem.a-(unsigned char*)jit_program-6;
@@ -91,6 +103,16 @@ int main() {
 	usleep(100000);
 	printf("a=%d, b=%d, result=%d, after=%d\n",jit_mem.a,jit_mem.b,jit_mem.result,jit_mem.after);
 
+	printf("Second injection time\n");
+	memcpy(jit_program+2+sizeof(domath),moremath,sizeof(moremath));
+	printf("Bam!\n");
+	printf("a=%d, b=%d, result=%d, after=%d\n",jit_mem.a,jit_mem.b,jit_mem.result,jit_mem.after);
+	memset(jit_program+sizeof(domath),0x9090,2);
+	usleep(1000); // sleeping some to give assembly time to run
+	printf("a=%d, b=%d, result=%d, after=%d\n",jit_mem.a,jit_mem.b,jit_mem.result,jit_mem.after);
+	usleep(100000);
+	printf("Tellling the VM that it's time to stop\n");
+	memset(jit_program+sizeof(domath)+sizeof(moremath),0x9090,2);
 	printf("Waiting for thread to finish...\n");
 	pthread_join(thread,NULL);
 	printf("a=%d, b=%d, result=%d, after=%d\n",jit_mem.a,jit_mem.b,jit_mem.result,jit_mem.after);

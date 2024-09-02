@@ -6,6 +6,14 @@ hello:
 .global funfunc
 
 funfunc:
+	push %rdi
+	add $8, %rdi
+	movq (%rdi), %rbx
+	addq %rbx, %rax
+	mov %eax, (%rdi)
+	pop %rdi
+	ret
+
 	add $4,%rdi
 	movq (%rdi), %rbx
 	addq %rbx, %rax
